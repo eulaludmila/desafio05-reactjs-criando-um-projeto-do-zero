@@ -7,6 +7,7 @@ import { FiUser } from 'react-icons/fi';
 import { AiOutlineCalendar } from 'react-icons/ai';
 import formatDateBrasilian from '../utils/formatDate';
 import Head from 'next/head'
+import { useEffect, useState } from 'react';
 
 interface Post {
   uid?: string;
@@ -25,43 +26,58 @@ interface PostPagination {
 
 interface HomeProps {
   postsPagination: PostPagination;
+  preview: boolean
 }
 
-export default function Home({ postsPagination }: HomeProps) {
+export default function Home({ postsPagination, preview }: HomeProps) {
+  const { next_page, results } = postsPagination
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [nextPage, setNextPage] = useState('');
+
+  useEffect(() => {
+    setNextPage(next_page)
+    setPosts(results)
+  }, [next_page, results])
+
+  const handlePagination = async () => {
+    await fetch(nextPage).
+      then(response => response.json()).
+      then(async res => {
+        console.log('res', res);
+
+        const formatData = await res.results.map((post: Post) => (
+          {
+            uid: post.uid,
+            first_publication_date: post.first_publication_date,
+            data: {
+              title: post.data.title,
+              subtitle: post.data.subtitle,
+              author: post.data.author,
+            }
+          }
+        ))
+
+        setPosts([...posts, ...formatData]);
+        setNextPage(res.next_page);
+      })
+  }
+
   return (
     <>
-    <Head>
-      <title>Home | spacetraveling</title>
-    </Head>
+      <Head>
+        <title>Home | Spacetraveling</title>
+      </Head>
       <main className={styles.contentContainer}>
         <div className={styles.listPosts}>
-          {postsPagination.map(post => (
+          {posts.map(post => (
             <Link href={`post/${post.uid}`} key={post.uid}>
-              <a>
+              <a href={`post/${post.uid}`} >
                 <h2>{post.data.title}</h2>
                 <p>{post.data.subtitle}</p>
                 <div>
                   <span>
                     <AiOutlineCalendar size={16} />
-                    {post.first_publication_date}
-                  </span>
-                  <span>
-                    <FiUser size={16} />
-                    {post.data.author}
-                  </span>
-                </div>
-              </a>
-            </Link>
-          ))}
-          {postsPagination.map(post => (
-            <Link href={`post/${post.uid}`} key={post.uid}>
-              <a>
-                <h2>{post.data.title}</h2>
-                <p>{post.data.subtitle}</p>
-                <div>
-                  <span>
-                    <AiOutlineCalendar size={16} />
-                    {post.first_publication_date}
+                    {formatDateBrasilian(post.first_publication_date)}
                   </span>
                   <span>
                     <FiUser size={16} />
@@ -72,33 +88,59 @@ export default function Home({ postsPagination }: HomeProps) {
             </Link>
           ))}
         </div>
+        {
+          nextPage && (
+            <button type='button' onClick={handlePagination} className={styles.morePosts}>
+              Carregar mais posts
+            </button>
+          )
+        }
+
+        {
+          preview && (
+            <aside className={styles.viewButton}>
+              <Link href="/api/exit-preview">
+                <a>Sair do modo Preview</a>
+              </Link>
+            </aside>
+          )
+        }
       </main>
     </>
   )
 }
 
-export const getStaticProps: GetStaticProps = async () => {
+export const getStaticProps: GetStaticProps = async ({
+  preview = false,
+  previewData,
+}) => {
   const prismic = getPrismicClient();
   const postsResponse = await prismic.query([
     Prismic.Predicates.at('document.type', 'post'),
   ], {
-    fetch: ['post.title', 'post.subtitle', 'post.author', 'post.last_publication_date'],
+    fetch: ['post.title', 'post.subtitle', 'post.author', 'post.first_publication_date'],
     pageSize: 2,
+    ref: previewData?.ref ?? null
   });
 
   const postsPagination = postsResponse.results.map(post => {
     return {
       uid: post.uid,
-      first_publication_date: formatDateBrasilian(post.first_publication_date),
+      first_publication_date: post.first_publication_date,
       data: {
         title: post.data.title,
         subtitle: post.data.subtitle,
         author: post.data.author,
       }
-      // content: post.data.content.map(content => ({heading: content.heading, body: RichText.asHtml(content.body)})),
     }
   })
   return {
-    props: { postsPagination }
+    props: {
+      postsPagination: {
+        next_page: postsResponse.next_page,
+        results: postsPagination,
+      },
+      preview
+    }
   }
 };
