@@ -1,18 +1,14 @@
+import { Document } from '@prismicio/client/types/documents';
 import { NextApiRequest, NextApiResponse } from 'next'
 import { getPrismicClient } from '../../services/prismic'
 
 const prismic = getPrismicClient();
 
-function linkResolver(doc) {
-  console.log('doc', doc);
-  
-  // Pretty URLs for known types
+function linkResolver(doc: Document): string {
   if (doc.type === 'posts') {
-    return `/posts/${doc.uid}`
+    return `/post/${doc.uid}`;
   }
-
-  // Fallback for other types, in case new custom types get created
-  return `/`
+  return '/';
 }
 
 export default async function (req: NextApiRequest, res: NextApiResponse) {

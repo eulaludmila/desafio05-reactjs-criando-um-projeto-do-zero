@@ -29,7 +29,7 @@ interface HomeProps {
   preview: boolean
 }
 
-export default function Home({ postsPagination, preview }: HomeProps) {
+export default function Home({ postsPagination, preview }: HomeProps): JSX.Element {
   const { next_page, results } = postsPagination
   const [posts, setPosts] = useState<Post[]>([]);
   const [nextPage, setNextPage] = useState('');

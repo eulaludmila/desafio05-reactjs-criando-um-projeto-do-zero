@@ -66,3 +66,23 @@
   color: #ff57b2;
   margin-top: 4rem;
 }
+
+.viewButton {
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8f8f8;
+  border-radius: 4px;
+  height: 48px;
+
+  a {
+    font-family: Inter;
+    font-style: normal;
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 22px;
+    text-align: justify;
+    color: var(--background);
+  }
+}

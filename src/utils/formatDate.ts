@@ -10,3 +10,13 @@ export default function formatDateBrasilian(date){
     }
   )
 }
+
+export function formatDateandHourBrasilian(date){
+  return format(
+    new Date(date),
+    "dd MMM yyyy, 'às' HH:mm",
+    {
+      locale: ptBR,
+    }
+  )
+}
